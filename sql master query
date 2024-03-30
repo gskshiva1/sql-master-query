@@ -1,0 +1,63 @@
+/*+ ETLM {
+       depend:{
+           update:[
+               {name:"auditbook_na.timesheet"}
+           ]
+       }
+    }  
+*/
+ 
+ select
+datepart(week, Date + interval '1 day') weeknum
+,datepart(month, Date) AS month
+,datepart(year, Date) AS year
+,LTRIM(to_char(Date,'dd-Mon-yy'),'0') as Shift_Date
+,alias||'-'||shift_date ::varchar(300) as id
+,alias
+,sum(case      when tasktype = 'LMAPP' then (timelogged:: float/3600)::decimal(10,2) end) as LMAPP
+,sum(case      when tasktype = 'Adhoc - Manager given task'  then (timelogged:: float/3600)::decimal(10,2) end) as Adhoc_Manager_given_task
+,sum(case      when tasktype = 'Cab delay'  then (timelogged:: float/3600)::decimal(10,2) end) as Cab_delay
+,sum(case      when tasktype = 'IT-Issues'  then (timelogged:: float/3600)::decimal(10,2) end) as IT_Issues
+,sum(case      when tasktype = 'Medical'  then (timelogged:: float/3600)::decimal(10,2) end) as Medical
+,sum(case      when tasktype = 'Auditbook down time'  then (timelogged:: float/3600)::decimal(10,2) end) as Auditbook_down_time
+,sum(case      when tasktype = 'Spoc work'  then (timelogged:: float/3600)::decimal(10,2) end) as Spoc_work
+,sum(case       when tasktype = 'Data'  then (timelogged:: float/3600)::decimal(10,2) end) as Data
+,sum(case       when tasktype = 'Team activity'  then (timelogged:: float/3600)::decimal(10,2) end) as Team_activity
+,sum(case       when tasktype = 'Team meeting'  then (timelogged:: float/3600)::decimal(10,2) end) as Team_meeting
+,sum(case       when tasktype = 'Training'  then (timelogged:: float/3600)::decimal(10,2) end) as Training
+,sum(case       when tasktype = 'OT'  then (timelogged:: float/3600)::decimal(10,2) end) as OT
+,sum(case       when tasktype = 'Un-accountable time'  then (timelogged:: float/3600)::decimal(10,2) end) as Un_accountable_time
+,sum(case        when tasktype = 'Others'  then (timelogged:: float/3600)::decimal(10,2) end) as Others
+,sum(case        when tasktype = 'Half day leave'  then (timelogged:: float/3600)::decimal(10,2) end) as Half_day_leave
+,sum(case       when tasktype = '1:1' then (timelogged:: float/3600)::decimal(10,2) end) as _1_1
+,sum((timelogged:: float/3600)::decimal(10,2)) as total_time
+
+-- ,remark
+ from (
+ select *, dense_rank() OVER (PARTITION BY alias, trunc(date) ORDER BY lastupdatedtime DESC) as rn
+ from auditbook_na.timesheet
+ where isdeleted = 0
+ and 
+      trunc(date) >= TO_DATE ('{RUN_DATE_YYYYMMDD}', 'YYYYMMDD')-300
+ and alias IN 
+    
+ (
+   'aaaparad','ahmedqr','ajithchn','akhilzx','akshatai','alvinuj','amithjs','angurupr','anjusufi','annus',
+    'apnishal','asiddikq','asowj','asrithac','aushetty','avineshh','banashmi','bhavanpl','bmyuga','chayark',
+    'chlsneha','cleeagil','dasabhar','dhanielj','djayavar','dneelu','ensxavi','ftnithi','ghantaa','gootypas',
+    'grkumars','gujjulav','gunnagna','gvenkatn','hadasari','hbkg','hnsachin','irfanhf','ishashre','jaymukhe',
+    'jsandivi','kalyanx','kalyanym','karivep','kaubsaha','kelisett','kucsagar','kumagoun','kvardani','kwsuresh',
+    'kyaminia','lakdevin','lohithap','lsvenkt','mahimohn','mahpamul','mandalf','manichk','mchetty','meghasam',
+    'mesainad','mesul','mmeheraj','mohankch','mohapada','mohjd','moulesh','mprgovin','mratla','msdhar',
+    'msonline','nagasarc','nandakbr','neeliga','niladr','omkarvm','padakshi','pallnavw','pbillaku','pmakkala',
+    'pnaveez','prabaddu','prakarrf','prawinrs','prsandak','pushpmy','raaramya','radzshiv','raghhnr','rajatray',
+    'ranjmogi','riteshne','rsishiva','rskanuri','rukku','rushijr','sadapers','samamasb','shabnaml','shafeers',
+    'sharyeli','shivjijj','shreyxv','sidrajee','sornapgn','soumyans','srujanga','srvshrey','sugottum','suhaskon',
+    'survikri','suryeah','takkoliy','tsaikumb','vamsbhar','veerkamb','venkych','vishvamv','vjaiabhi','vpalled',
+    'vrharika','vsivanv','xsharipr','yamineeg','zeekagad'
+)
+   
+ 
+ ) 
+where rn = 1 and weeknum=12
+group by alias, weeknum, month, year, shift_date, id;
